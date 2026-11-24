@@ -26,12 +26,26 @@ import os
 TEXT = "I dropped the production database and its only backup. The migration was me."
 
 
+def check_gate(text):
+    """Enforce the scorer's gate (RULES.txt) plus the single-line rule.
+
+    Gate: UTF-8, 1 to 200 characters, not whitespace-only; and the task:
+    a single line under 200 chars. The gate counts characters, not
+    bytes. Fail loudly instead of writing an invalid entry.
+    """
+    if not isinstance(text, str):
+        raise SystemExit("entry text is not a string")
+    if not 1 <= len(text) <= 200 or not text.strip():
+        raise SystemExit("entry text violates the 1-200 char gate")
+    # Single line: no newline, carriage return, or any other control
+    # character — a control byte inside the text would break the one
+    # line the grader reads.
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in text):
+        raise SystemExit("entry text must be a single line without control characters")
+
+
 def main():
-    # Enforce the scorer's gate (RULES.txt): UTF-8, 1 to 200 characters,
-    # not whitespace-only; and the task: a single line under 200 chars.
-    # Fail loudly instead of writing an invalid entry.
-    if not 1 <= len(TEXT) <= 200 or not TEXT.strip() or "\n" in TEXT or "\r" in TEXT:
-        raise SystemExit("entry text violates the 1-200 char single-line gate")
+    check_gate(TEXT)
     out_dir = os.environ.get("OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     # Write atomically: a crash mid-write must never leave a truncated
